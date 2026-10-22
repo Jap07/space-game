@@ -1,11 +1,11 @@
 body {
-   display: flex;
-  flex-direction: column;    /* Stacks elements vertically */
-  justify-content: center;   /* Centers them vertically */
-  align-items: center;       /* 🌟 THIS FIXES THE SIDE-SHIFT! Centers horizontally */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
-  margin: 0;
-  background-color: #222;
+  margin: 0;                
+  background-color: #222;   
   
 }
 
@@ -16,6 +16,14 @@ body {
 }
 h2 {
   color: white;             
+  font-family: Arial, sans-serif; 
+  font-size: 24px;          
+  text-align: center;       
+  margin-bottom: 20px;     
+  text-align: center;
+}
+button {
+  color: green;             
   font-family: Arial, sans-serif; 
   font-size: 24px;          
   text-align: center;       
