@@ -7,8 +7,9 @@ let player ={ // hetta er spælarin hjá okkara sum vit kunnu brúka til at fáa
     y: 540,
     width: 50,
     height: 40,
-    speed: 3
+    speedPerSecond: 495
 }
+let lastFrameTime = null;
 let moveLeft = false; // boolean variabel til at fylgja um skipið skal flytast til vinstru
 let moveRight = false; // boolean variabel til at fylgja um skipið skal flytast til høgru
 ctx.fillStyle = "white";
@@ -18,6 +19,7 @@ let GameScore = 0;
 let Score = document.querySelector("#score");
 let lives = 3;
 let nextLifeScore = 20;
+let asteroidSpeedBonusPerSecond = 0;
 const asteroidSound = new Audio("asteroid.mp3");
 const laserSound = new Audio ("Laser1.mp3");
 const allSounds = [asteroidSound, laserSound];
@@ -81,9 +83,6 @@ const lCtx = laserCanvas.getContext('2d');
 lCtx.fillStyle = "lime";
 lCtx.fillRect(0, 0, 4, 15);
 
-
-
-
 // hetta er fyri tá ið vit týrsta ein knapp tað hyggur eftir um hann er uppi elle niðir (hetta er uppi)
 function handleKeyUp(event) {
     if (event.key === "ArrowLeft") {
@@ -105,11 +104,17 @@ function handlekeydown(event) {
     }
 }
 // hetta er spælið sjálvt, har ið vit hava gameover, flyta skipið, okkara asteroids og lasers og nogv anna
-function gameloop(){
+function gameloop(timestamp){
+    const deltaSeconds = lastFrameTime === null
+        ? 0
+        : Math.min((timestamp - lastFrameTime) / 1000, 0.05);
+    lastFrameTime = timestamp;
+
     ctx.clearRect(0, 0, 800, 600);
     ctx.fillStyle = "white";
     ctx.font = "24px Arial";
     ctx.fillText("Lives: " + lives, 12, 32);
+   
 
         if(isGameOver){
             ctx.fillStyle = "red";
@@ -118,10 +123,10 @@ function gameloop(){
             return;
         }
     if(moveLeft && player.x > 0) {
-        player.x -= player.speed;
+        player.x = Math.max(0, player.x - player.speedPerSecond * deltaSeconds);
     }
-    if(moveRight && player.x + player.width < 800) {
-        player.x += player.speed;
+    if(moveRight && player.x + player.width < canvas.width) {
+        player.x = Math.min(canvas.width - player.width, player.x + player.speedPerSecond * deltaSeconds);
     }
     ctx.drawImage(playerCanvas, player.x, player.y, player.width, player.height); // teknar okkara ship
 
@@ -132,7 +137,7 @@ function gameloop(){
    let shipCenterY = player.y + player.height / 2;
     for (let i = asteroids.length - 1; i >= 0; i--){ // hetta forloop er fyri okkara asteroids vit kunnu eisini broyta hvussu skjótt hon dettur
         let ast = asteroids[i];
-        ast.y += ast.speed;
+        ast.y += ast.speedPerSecond * deltaSeconds;
        ctx.drawImage(asteroidCanvas, ast.x, ast.y, ast.width, ast.height); // hetta tekna okkara asteroid
 
         /*ctx.fillStyle = "blue"
@@ -164,7 +169,7 @@ function gameloop(){
 }       // hetta er fyri at gera okkara lasers og kanna um teir hava rakt ein asteroid um teir hava so ferð points upp við einum
     for (let i = lasers.length - 1; i >= 0; i --){ 
         let laser = lasers[i];
-        laser.y -= laser.speed;
+        laser.y -= laser.speedPerSecond * deltaSeconds;
         ctx.drawImage(laserCanvas, laser.x, laser.y, laser.width, laser.height);
         if (laser.y <-20) { // hetta er fyri at sletta lasers sum fara av skerminum so tað ikki tekur for nógv ram
             lasers.splice (i,1);
@@ -182,6 +187,13 @@ function gameloop(){
 
                     GameScore++; // hetta er fyri at fáa points at fara upp
                     Score.textContent ="Points: " + GameScore;
+                    if (GameScore % 5 === 0) {
+                        player.speedPerSecond += 16.5;
+                        asteroidSpeedBonusPerSecond += 8.25;
+                        for (const asteroid of asteroids) {
+                            asteroid.speedPerSecond += 8.25;
+                        }
+                    }
                     if (GameScore >= nextLifeScore){
                         lives++;
                         nextLifeScore += 20;
@@ -205,7 +217,7 @@ function spawnAsteroid(){
         y: -40,
         width: 40,
         height: 40,
-        speed: 2 + Math.random() * 1.1 // gevur eina random ferð niður eftir
+        speedPerSecond: 330 + asteroidSpeedBonusPerSecond
         };
         asteroids.push(newAsteroid);
         
@@ -221,7 +233,7 @@ function shootLasers(){ // hetta er fyri at gera okkara lasers sum vit kunnu sj�
         y: player.y - 10,
         width: 4,
         height: 15,
-        speed: 7
+        speedPerSecond: 1155
     };
     lasers.push(newLaser);
     
@@ -232,7 +244,7 @@ function Restart(){
     window.location.reload(true);
 }
 
-gameloop();
+requestAnimationFrame(gameloop);
 setInterval(function() { // hetta spawnar okkara asteroid innanfyri eitt tíðspunkt vit hava valt
     spawnAsteroid();
 }, 1000);
