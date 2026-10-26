@@ -19,6 +19,10 @@ let GameScore = 0;
 let Score = document.querySelector("#score");
 let PlayerSpeed = document.querySelector("#playerSpeed");
 PlayerSpeed.textContent = "Player Speed: " + player.speedPerSecond;
+let highScore = Number(localStorage.getItem("asteroid_highscore"));
+if (!Number.isFinite(highScore) || highScore < 0) {
+    highScore = 0;
+}
 let lives = 3;
 let nextLifeScore = 20;
 let asteroidSpeedBonusPerSecond = 0;
@@ -31,7 +35,9 @@ let lastShotTime = 0;
 let SHOOT_COOLDOWN = 400;
 let AstInterval = 1000;
 let asteroidSpawnTimer;
-
+let HighScoreElement = document.querySelector("#highScore");
+let animationFrameId = null;
+HighScoreElement.textContent = "High Score: " + highScore;
 
 allSounds.forEach(sound => {
     sound.volume = 0.02; 
@@ -109,8 +115,28 @@ function handlekeydown(event) {
         shootLasers();
     }
 }
+function updateHighScore() {
+    if (GameScore > highScore) {
+        highScore = GameScore;
+        localStorage.setItem("asteroid_highscore", highScore);
+    }
+    HighScoreElement.textContent = "High Score: " + highScore;
+}
 // hetta er spælið sjálvt, har ið vit hava gameover, flyta skipið, okkara asteroids og lasers og nogv anna
 function gameloop(timestamp){
+      animationFrameId = null;
+      if(isGameOver){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText("Lives: " + lives, 12, 32);
+        ctx.fillStyle = "red";
+        ctx.font = "50px Arial";
+        ctx.fillText("gameover", 290, 300);
+        updateHighScore();
+        return; 
+    }
+    
     const deltaSeconds = lastFrameTime === null
         ? 0
         : Math.min((timestamp - lastFrameTime) / 1000, 0.05);
@@ -122,12 +148,6 @@ function gameloop(timestamp){
     ctx.fillText("Lives: " + lives, 12, 32);
    
 
-        if(isGameOver){
-            ctx.fillStyle = "red";
-            ctx.font = "50px Arial";
-            ctx.fillText( "gameover", 290, 300);
-            return;
-        }
     if(moveLeft && player.x > 0) {
         player.x = Math.max(0, player.x - player.speedPerSecond * deltaSeconds);
     }
@@ -193,6 +213,7 @@ function gameloop(timestamp){
 
                     GameScore++; // hetta er fyri at fáa points at fara upp
                     Score.textContent ="Points: " + GameScore;
+                    updateHighScore();
                     if (GameScore % 1 === 0) {
                         player.speedPerSecond += 3; // hetta er fyri at økja speedin hjá okkara ship 
                         asteroidSpeedBonusPerSecond += 2; // hetta er fyri at økja speedin hjá okkara asteroids
@@ -215,7 +236,7 @@ function gameloop(timestamp){
     }
 
     
-    requestAnimationFrame(gameloop);
+    animationFrameId = requestAnimationFrame(gameloop);
 }
 // her hava vit skapið av okkara asteroid
 function spawnAsteroid(){
@@ -255,11 +276,40 @@ function shootLasers(){ // hetta er fyri at gera okkara lasers sum vit kunnu sj�
     laserSound.currentTime = 0; // hetta er fyri at kunna spæla ljóðið aftur og aftur tá ið vit skjóta fleiri lasers
     laserSound.play(); // hetta er fyri at spæla ljóðið tá ið vit skjóta ein laser
 }
-function Restart(){
-    window.location.reload(true);
+function Restart() {
+    updateHighScore();
+    if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+    }
+
+    asteroids = [];
+    lasers = [];
+    isGameOver = false;
+    moveLeft = false;
+    moveRight = false;
+    GameScore = 0;
+    lives = 3;
+    nextLifeScore = 20;
+    asteroidSpeedBonusPerSecond = 0;
+    SHOOT_COOLDOWN = 400;
+    AstInterval = 1000;
+    lastFrameTime = null; // Important to reset delta time tracking
+    lastShotTime = 0;
+
+   
+    player.x = 375;
+    player.y = 540;
+    player.speedPerSecond = 455;
+
+  
+    Score.textContent = "Points: " + GameScore;
+    PlayerSpeed.textContent = "Player Speed: " + player.speedPerSecond;
+
+    updateAsteroidSpawnTimer();
+    animationFrameId = requestAnimationFrame(gameloop);
 }
 
-requestAnimationFrame(gameloop);
+animationFrameId = requestAnimationFrame(gameloop);
 updateAsteroidSpawnTimer();
 window.addEventListener("keydown", handlekeydown);
 window.addEventListener("keyup", handleKeyUp);
